@@ -1,0 +1,76 @@
+---
+title: "project2"
+author: "Xiaoyu Zhou  UNI:xz2599"
+date: "October 1, 2017"
+output: html_document
+---
+
+```{r}
+rast_data = read.csv("/Users/Xiaoyu/Downloads/DOHMH_New_York_City_Restaurant_Inspection_Results (1).csv",header = T,as.is = T)
+head(rast_data,10)
+nrow(rast_data)
+rast_data = rast_data[rast_data$BORO=="MANHATTAN",]
+#write.csv(rast_data, file = "rast_data.csv",row.names=FALSE)
+
+rast_data$add=with(rast_data,paste(BUILDING,STREET))
+
+geocodeAdddress <- function(address) {
+  require(RJSONIO)
+  url <- "http://maps.google.com/maps/api/geocode/json?address="
+  url <- URLencode(paste(url, address, "&sensor=false", sep = ""))
+  x <- fromJSON(url, simplify = FALSE)
+  if (x$status == "OK") {
+    out <- c(x$results[[1]]$geometry$location$lng,
+             x$results[[1]]$geometry$location$lat)
+  } else {
+    out <- NA
+  }
+  Sys.sleep(0.2)  # API only allows 5 requests per second
+  out
+}
+geocodeAdddress("time square")
+
+y=c()
+for(i in 1:158150){
+  y[[i]]=geocodeAdddress(x[i])
+  try(y)  
+}
+
+# Geocoding a csv column of "addresses" in R
+
+#load ggmap
+library(ggmap)
+library(ggplot2)
+# Select the file from the file chooser
+#fileToLoad <- file.choose(new = TRUE)
+
+# Read in the CSV data and store it in a variable 
+#origAddress <- read.csv(fileToLoad, stringsAsFactors = FALSE)
+
+# Initialize the data frame
+geocoded <- data.frame(stringsAsFactors = FALSE)
+
+# Loop through the addresses to get the latitude and longitude of each address and add it to the
+# origAddress data frame in new columns lat and lon
+for(i in 3470:158149)
+{
+  # Print("Working...")
+  result <- geocode(rast_data$add[i], output = "latlona", source = "google")
+  rast_data$lon[i] <- as.numeric(result[1])
+  rast_data$lat[i] <- as.numeric(result[2])
+  if (length(result)>2){
+    rast_data$geoAddress[i] <- as.character(result[3])
+  }
+}
+# Write a CSV file containing origAddress to the working directory
+write.csv(rast_data, "geocoded1.csv", row.names=FALSE)
+
+```
+
+```{r}
+rastdata = read.csv("/Users/Xiaoyu/Documents/GitHub/adsFall2017/project2/data.csv",header = T,as.is = T)
+
+rastdata =rastdata[rastdata$lon>(-75) & rastdata$lon<(-73),]
+rastdata =na.omit(rastdata)
+
+```
